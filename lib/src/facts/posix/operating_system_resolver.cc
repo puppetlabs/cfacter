@@ -2,8 +2,10 @@
 #include <facter/facts/posix/os.hpp>
 #include <facter/facts/posix/os_family.hpp>
 #include <facter/facts/scalar_value.hpp>
+#include <facter/facts/map_value.hpp>
 #include <facter/facts/collection.hpp>
 #include <facter/facts/fact.hpp>
+#include <re2/re2.h>
 #include <map>
 
 using namespace std;
@@ -17,7 +19,8 @@ namespace facter { namespace facts { namespace posix {
                 fact::operating_system,
                 fact::os_family,
                 fact::operating_system_release,
-                fact::operating_system_major_release
+                fact::operating_system_major_release,
+                fact::os
             })
     {
     }
@@ -29,6 +32,7 @@ namespace facter { namespace facts { namespace posix {
         resolve_os_family(facts);
         resolve_operating_system_release(facts);
         resolve_operating_system_major_release(facts);
+        resolve_os(facts);
     }
 
     void operating_system_resolver::resolve_operating_system(collection& facts)
@@ -107,6 +111,44 @@ namespace facter { namespace facts { namespace posix {
         }
 
         facts.add(fact::operating_system_release, make_value<string_value>(release->value()));
+    }
+
+    void operating_system_resolver::resolve_os(collection& facts)
+    {
+        auto os = facts.get<string_value>(fact::operating_system, false);
+        auto family = facts.get<string_value>(fact::os_family, false);
+        auto release = facts.get<string_value>(fact::operating_system_release, false);
+        auto os_value = make_value<map_value>();
+
+        if (os) {
+            os_value->add("name", make_value<string_value>(os->value()));
+
+            if (family) {
+                os_value->add("family", make_value<string_value>(family->value()));
+            }
+
+            if (release) {
+                auto release_map = make_value<map_value>();
+                string major;
+                string minor;
+                if (RE2::PartialMatch(release->value(), "^(\\d+)\\.?(\\d+)?", &major, &minor)) {
+                    if (!major.empty()) {
+                        release_map->add("major", make_value<integer_value>(stoi(major)));
+                    }
+
+                    if (!minor.empty()) {
+                        release_map->add("minor", make_value<integer_value>(stoi(minor)));
+                    }
+                }
+
+                release_map->add("full", make_value<string_value>(release->value()));
+                os_value->add("release", move(release_map));
+            }
+        }
+
+        if (!os_value->empty()) {
+            facts.add(fact::os, move(os_value));
+        }
     }
 
 }}}  // namespace facter::facts::posix

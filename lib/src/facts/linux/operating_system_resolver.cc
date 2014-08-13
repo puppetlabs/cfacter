@@ -3,6 +3,7 @@
 #include <facter/facts/linux/release_file.hpp>
 #include <facter/facts/posix/os.hpp>
 #include <facter/facts/scalar_value.hpp>
+#include <facter/facts/map_value.hpp>
 #include <facter/facts/collection.hpp>
 #include <facter/facts/fact.hpp>
 #include <facter/execution/execution.hpp>
@@ -218,6 +219,100 @@ namespace facter { namespace facts { namespace linux {
             value = value.substr(0, pos);
         }
         facts.add(fact::operating_system_major_release, make_value<string_value>(move(value)));
+    }
+
+    void operating_system_resolver::resolve_os(collection& facts)
+    {
+        auto os_value = make_value<map_value>();
+        auto lsb_value = make_value<map_value>();
+        auto release_map = make_value<map_value>();
+
+        //  Collect the operating system facts
+        auto os = facts.get<string_value>(fact::operating_system);
+        auto family = facts.get<string_value>(fact::os_family);
+        auto release = facts.get<string_value>(fact::operating_system_release);
+        auto release_major = facts.get<string_value>(fact::operating_system_major_release);
+
+        //  Collect the LSB facts
+        auto dist_id = facts.get<string_value>(fact::lsb_dist_id);
+        auto dist_release = facts.get<string_value>(fact::lsb_dist_release);
+        auto dist_codename = facts.get<string_value>(fact::lsb_dist_codename);
+        auto dist_description = facts.get<string_value>(fact::lsb_dist_description);
+        auto dist_major_release = facts.get<string_value>(fact::lsb_dist_major_release);
+        auto dist_minor_release = facts.get<string_value>(fact::lsb_dist_minor_release);
+        auto lsb_release = facts.get<string_value>(fact::lsb_dist_release);
+
+        if (os) {
+            os_value->add("name", make_value<string_value>(os->value()));
+
+            if (family) {
+                os_value->add("family", make_value<string_value>(family->value()));
+            }
+
+            if (release) {
+                release_map->add("full", make_value<string_value>(release->value()));
+
+                string minor;
+                if (strcmp(os->value().c_str(), "Ubuntu") == 0) {
+                    if (RE2::PartialMatch(release->value(), "^\\d+\\.\\d+\\.(\\d+)", &minor)) {
+                        if (!minor.empty()) {
+                            release_map->add("minor", make_value<integer_value>(stoi(minor)));
+                        }
+                    }
+                } else {
+                    if (RE2::PartialMatch(release->value(), "^\\d+\\.(\\d+)", &minor)) {
+                        if (!minor.empty()) {
+                            release_map->add("minor", make_value<integer_value>(stoi(minor)));
+                        }
+                    }
+                }
+            }
+
+            if (release_major) {
+                release_map->add("major", make_value<integer_value>(stoi(release_major->value())));
+            }
+        }
+
+
+        if (!release_map->empty()) {
+            os_value->add("release", move(release_map));
+        }
+
+        if (dist_id) {
+            lsb_value->add("dist_id", make_value<string_value>(dist_id->value()));
+        }
+
+        if (dist_release) {
+            lsb_value->add("dist_release", make_value<string_value>(dist_release->value()));
+        }
+
+        if (dist_codename) {
+            lsb_value->add("dist_codename", make_value<string_value>(dist_codename->value()));
+        }
+
+        if (dist_description) {
+            lsb_value->add("dist_description", make_value<string_value>(dist_description->value()));
+        }
+
+        if (dist_major_release) {
+            lsb_value->add("major_dist_release", make_value<string_value>(dist_major_release->value()));
+        }
+
+        if (dist_minor_release) {
+            lsb_value->add("minor_dist_release", make_value<string_value>(dist_minor_release->value()));
+        }
+
+        if (lsb_release) {
+            lsb_value->add("release", make_value<string_value>(lsb_release->value()));
+        }
+
+        if (!lsb_value->empty()) {
+            os_value->add("lsb", move(lsb_value));
+        }
+
+        if (!os_value->empty()) {
+            facts.add(fact::os, move(os_value));
+        }
     }
 
     string operating_system_resolver::check_cumulus_linux()

@@ -45,6 +45,11 @@ namespace facter { namespace facts { namespace posix {
          * @param facts The fact collection that is resolving facts.
          */
         virtual void resolve_operating_system_major_release(collection& facts) {}
+        /**
+         * Called to resolve the os structured fact.
+         * @param facts The fact collection that is resolving facts.
+         */
+        virtual void resolve_os(collection& facts);
     };
 
 }}}  // namespace facter::facts::posix

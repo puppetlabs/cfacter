@@ -30,6 +30,10 @@ namespace facter { namespace facts {
         constexpr static char const* kernel_major_version = "kernelmajversion";
 
         /**
+         * The structured operatingsystem fact
+         */
+        constexpr static char const* os = "os";
+        /**
          * The fact for operating system name.
          */
         constexpr static char const* operating_system = "operatingsystem";
