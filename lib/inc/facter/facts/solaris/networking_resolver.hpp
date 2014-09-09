@@ -95,7 +95,14 @@ namespace facter { namespace facts { namespace solaris {
          */
         virtual std::string get_primary_interface();
 
-       /**
+        /**
+         * Finds the DHCP server for the given interface.
+         * @param interface The interface to find the DHCP server for.
+         * @returns Returns the DHCP server for the interface or empty string if one isn't found.
+         */
+        virtual std::string find_dhcp_server(std::string const& interface);
+
+        /**
          * Determines if the given sock address is a link layer address.
          * @param addr The socket address to check.
          * @returns Returns true if the socket address is a link layer address or false if it is not.

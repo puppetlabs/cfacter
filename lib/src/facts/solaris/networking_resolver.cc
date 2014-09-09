@@ -95,6 +95,9 @@ namespace facter { namespace facts { namespace solaris {
             LOG_DEBUG("no primary interface found.");
         }
 
+        auto dhcp_servers_value = make_value<map_value>();
+
+
         // Walk the interfaces
         decltype(interface_map.begin()) addr_it;
         for (auto it = interface_map.begin(); it != interface_map.end(); it = addr_it) {
@@ -112,6 +115,14 @@ namespace facter { namespace facts { namespace solaris {
                 resolve_mtu(facts, addr);
             }
 
+            string dhcp_server = find_dhcp_server(interface);
+            if (!dhcp_server.empty()) {
+                if (primary) {
+                    dhcp_servers_value->add("system", make_value<string_value>(dhcp_server));
+                }
+                dhcp_servers_value->add(string(interface), make_value<string_value>(move(dhcp_server)));
+            }
+
             // Add the interface to the interfaces fact
             if (interfaces.tellp() != 0) {
                 interfaces << ",";
@@ -126,6 +137,11 @@ namespace facter { namespace facts { namespace solaris {
                     fact::netmask, fact::netmask6,
                     fact::network, fact::network6,
                     fact::macaddress);
+        }
+
+        // Add the DHCP servers fact
+        if (!dhcp_servers_value->empty()) {
+            facts.add(fact::dhcp_servers, move(dhcp_servers_value));
         }
 
         string value = interfaces.str();
@@ -284,6 +300,15 @@ namespace facter { namespace facts { namespace solaris {
         return reinterpret_cast<lifreq*>(data)->lifr_metric;
     }
 
+    string networking_resolver::find_dhcp_server(string const& interface)
+    {
+        // Use ipconfig to get the server identifier
+        auto result = execute("dhcpinfo", { "-i", interface, "ServerID" });
+        if (!result.first) {
+            return {};
+        }
+        return result.second;
+    }
 
     networking_resolver::~networking_resolver()
     {
