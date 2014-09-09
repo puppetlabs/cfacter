@@ -20,37 +20,10 @@ namespace facter { namespace facts { namespace solaris {
     struct networking_resolver : posix::networking_resolver
     {
         /**
-         * Used as a parameter to ioctl, and carries the state of
-         * interface. The data_socket4 is an ipv4 socket
-         */
-        int data_socket4 = -1;
-
-        /**
-         * Used as a parameter to ioctl, and carries the state of
-         * interface. The data_socket6 is an ipv6 socket
-         */
-        int data_socket6 = -1;
-
-        /**
-         * Returns the correct socket depending on the family
-         */
-        int data_socket(int family);
-
-        /**
          * Caches the mapping between socket addresses and macaddresses so that
          * repeated calls are efficient.
          */
         std::multimap<const sockaddr*, uint8_t*> address_map;
-
-        /**
-         * Creates a datagram socket for ioctl
-         */
-        networking_resolver();
-
-        /**
-         * Ensures that the socket is closed.
-         */
-        virtual ~networking_resolver();
 
      protected:
         /**

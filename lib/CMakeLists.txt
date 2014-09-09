@@ -113,6 +113,7 @@ elseif ("${CMAKE_SYSTEM_NAME}" MATCHES "SunOS")
         "${CMAKE_CURRENT_LIST_DIR}/src/facts/solaris/kernel_resolver.cc"
         "${CMAKE_CURRENT_LIST_DIR}/src/facts/solaris/filesystem_resolver.cc"
         "${CMAKE_CURRENT_LIST_DIR}/src/facts/solaris/networking_resolver.cc"
+        "${CMAKE_CURRENT_LIST_DIR}/src/util/solaris/io_ctl.cc"
     )
 elseif ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
     set(LIBFACTER_PLATFORM_SOURCES
