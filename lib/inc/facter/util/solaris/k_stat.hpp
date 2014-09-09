@@ -48,6 +48,8 @@ namespace facter { namespace util { namespace solaris {
 
         k_stat_entry operator[](std::pair<std::string, std::string>&& entry);
 
+        k_stat_entry operator[](std::pair<std::string, int>&& entry);
+
         k_stat_entry operator[](std::tuple<std::string, int, std::string>&& entry);
 
      private:

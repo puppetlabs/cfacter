@@ -9,7 +9,12 @@ namespace facter { namespace util { namespace solaris {
         }
     }
 
-    k_stat_entry k_stat::operator[](pair<string,string>&& entry)
+    k_stat_entry k_stat::operator[](pair<string, int>&& entry)
+    {
+        return operator[](std::tuple<string, int, string>(entry.first, entry.second, ""));
+    }
+
+    k_stat_entry k_stat::operator[](pair<string, string>&& entry)
     {
         return operator[](std::tuple<string, int, string>(entry.first, 0, entry.second));
     }
@@ -20,7 +25,7 @@ namespace facter { namespace util { namespace solaris {
         auto instance = get<1>(entry);
         auto klass = get<2>(entry);
 
-        kstat_t* kp = kstat_lookup(ctrl, const_cast<char*>(module.c_str()), instance, const_cast<char *>(klass.c_str()));
+        kstat_t* kp = kstat_lookup(ctrl, const_cast<char*>(module.c_str()), instance, klass.empty() ? nullptr : const_cast<char *>(klass.c_str()));
         if (kp == nullptr) {
             throw kstat_exception("kstat_lookup failed");
         }
@@ -47,6 +52,14 @@ namespace facter { namespace util { namespace solaris {
 
     template<> unsigned long k_stat_entry::value(const std::string& attrib) {
         return lookup(attrib)->value.ul;
+    }
+
+    template<> string k_stat_entry::value(const std::string& attrib) {
+        return lookup(attrib)->value.str.addr.ptr;
+    }
+
+    template<> int k_stat_entry::value(const std::string& attrib) {
+        return lookup(attrib)->value.ui32;
     }
 
 }}}  // namespace facter::util::solaris
