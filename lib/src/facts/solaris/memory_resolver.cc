@@ -1,7 +1,7 @@
 #include <facter/facts/solaris/memory_resolver.hpp>
 #include <facter/logging/logging.hpp>
 #include <facter/util/file.hpp>
-#include <facter/util/solaris/scoped_kstat.hpp>
+#include <facter/util/solaris/k_stat.hpp>
 #include <boost/algorithm/string.hpp>
 #include <sys/sysinfo.h>
 #include <sys/sysconfig.h>
@@ -21,31 +21,10 @@ namespace facter { namespace facts { namespace solaris {
     {
         long page_size = sysconf(_SC_PAGESIZE);
         try {
-            scoped_kstat kc;
-            if (kc == nullptr) {
-                throw kstat_exception("kstat_open failed");
-            }
-
-            kstat_t *kp;
-            kstat_named_t *knp;
-
-            if ((kp = kstat_lookup(kc, const_cast<char*>("unix"), 0, const_cast<char *>("system_pages"))) == nullptr) {
-                throw kstat_exception("kstat_lookup failed");
-            }
-
-            if (kstat_read(kc, kp, 0) == -1) {
-                throw kstat_exception("kstat_read failed");
-            }
-
-            if ((knp = reinterpret_cast<kstat_named_t*>(kstat_data_lookup(kp, const_cast<char *>("physmem")))) == nullptr) {
-                throw kstat_exception("kstat_data_lookup failed");
-            }
-            mem_total = knp->value.ul * page_size;
-
-            if ((knp = reinterpret_cast<kstat_named_t*>(kstat_data_lookup(kp, const_cast<char *>("pagesfree")))) == nullptr) {
-                throw kstat_exception("kstat_lookup failed");
-            }
-            mem_free = knp->value.ul * page_size;
+            k_stat kc;
+            k_stat_entry ke = kc[{"unix", "system_pages"}];
+            mem_total = ke.value<unsigned long>("physmem") * page_size;
+            mem_free = ke.value<unsigned long>("pagesfree") * page_size;
 
             // Swap requires a little more investigation as to the correct method. See
             // https://community.oracle.com/thread/1951228?start=0&tstart=0
