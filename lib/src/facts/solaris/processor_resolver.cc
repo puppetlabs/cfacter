@@ -77,9 +77,9 @@ namespace facter { namespace facts { namespace solaris {
 
                 auto brand = ke.value<string>("brand");
                 processor_list->add(make_value<string_value>(brand));
-                auto chip_id = ke.value<int>("chip_id");
+                auto chip_id = ke.value<int32_t>("chip_id");
                 chips.insert(chip_id);
-                auto core_id = ke.value<int>("core_id");
+                auto core_id = ke.value<int32_t>("core_id");
                 cores.insert(core_id);
             } catch (exception& ex) {
                 // not an error, the cpu_id passed was not valid

@@ -45,21 +45,47 @@ namespace facter { namespace util { namespace solaris {
     {
         kstat_named_t* knp = reinterpret_cast<kstat_named_t*>(kstat_data_lookup(k_stat, const_cast<char*>(attrib.c_str())));
         if (knp == nullptr) {
-            throw kstat_exception("kstat_data_lookup failed");
+            throw kstat_exception("kstat_data_lookup failed for " + attrib);
         }
         return knp;
     }
+    /*
+     * char : c[16]
+     * i32
+     * ui32
+     * i64
+     * ui64
+     * l
+     * ul
+     * string - addr(ptr, __pad), len
+     */
 
-    template<> unsigned long k_stat_entry::value(const std::string& attrib) {
+    template<> ulong_t k_stat_entry::value(const std::string& attrib) {
         return lookup(attrib)->value.ul;
+    }
+
+    template<> long k_stat_entry::value(const std::string& attrib) {
+        return lookup(attrib)->value.l;
+    }
+
+    template<> int32_t k_stat_entry::value(const std::string& attrib) {
+        return lookup(attrib)->value.i32;
+    }
+
+    template<> uint32_t k_stat_entry::value(const std::string& attrib) {
+        return lookup(attrib)->value.ui32;
+    }
+
+    template<> int64_t k_stat_entry::value(const std::string& attrib) {
+        return lookup(attrib)->value.i64;
+    }
+
+    template<> uint64_t k_stat_entry::value(const std::string& attrib) {
+        return lookup(attrib)->value.ui64;
     }
 
     template<> string k_stat_entry::value(const std::string& attrib) {
         return lookup(attrib)->value.str.addr.ptr;
-    }
-
-    template<> int k_stat_entry::value(const std::string& attrib) {
-        return lookup(attrib)->value.ui32;
     }
 
 }}}  // namespace facter::util::solaris
