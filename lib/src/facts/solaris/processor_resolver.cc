@@ -7,12 +7,13 @@
 #include <facter/facts/fact.hpp>
 #include <unordered_set>
 #include <sys/processor.h>
-#include <kstat.h>
+#include <facter/util/solaris/k_stat.hpp>
 
 using namespace std;
 using namespace facter::facts;
 using namespace facter::facts::posix;
 using namespace facter::util;
+using namespace facter::util::solaris;
 
 LOG_DECLARE_NAMESPACE("facts.solaris.processor");
 /*
@@ -63,52 +64,28 @@ namespace facter { namespace facts { namespace solaris {
         unordered_set<int> cores;
         unordered_set<int> chips;
 
-        kstat_ctl_t *kc = nullptr;
-        kstat_named_t *knp = nullptr;
-
-        if ((kc = kstat_open()) == nullptr) {
-            LOG_DEBUG("kstat_open failed: %1% (%2%): processor facts are unavailable.", strerror(errno), errno);
-            return;
-        }
-
+        k_stat kc;
         // man p_online(2) suggests that we have to iterate upto
         // SC_CPUID_MAX to determine the valid cpus.
         long max_cpuid = sysconf(_SC_CPUID_MAX);
 
-        kstat_t *cpu_info;
         for (processorid_t p_id = 0; p_id < max_cpuid; ++p_id) {
-            if (!(cpu_info = kstat_lookup(kc, const_cast<char*>("cpu_info"), p_id, nullptr))) {
-                // This isn't an error. The cpu id we looked up was not present in the system.
-                continue;
-            }
-            // we have a valid hardware thread so let us account for it.
-            ++hardware_thread_count;
+            try {
+                k_stat_entry ke = kc[{"cpu_info", p_id}];
+                // we have a valid hardware thread so let us account for it.
+                ++hardware_thread_count;
 
-            if (kstat_read(kc, cpu_info, nullptr) == -1) {
-                LOG_DEBUG("kstat_read failed: %1% (%2%): cpu-info for %3% thread is unavailable.", strerror(errno), errno, p_id);
-                continue;
+                auto brand = ke.value<string>("brand");
+                processor_list->add(make_value<string_value>(brand));
+                auto chip_id = ke.value<int32_t>("chip_id");
+                chips.insert(chip_id);
+                auto core_id = ke.value<int32_t>("core_id");
+                cores.insert(core_id);
+            } catch (exception& ex) {
+                // not an error, the cpu_id passed was not valid
             }
-
-            if ((knp = reinterpret_cast<kstat_named_t *>(kstat_data_lookup(cpu_info, const_cast<char *>("brand")))) == nullptr) {
-                LOG_DEBUG("kstat_read failed: %1% (%2%): brand name for %3% thread is unavailable.", strerror(errno), errno, p_id);
-                continue;
-            }
-            processor_list->add(make_value<string_value>(knp->value.str.addr.ptr));
-
-            if ((knp = reinterpret_cast<kstat_named_t *>(kstat_data_lookup(cpu_info, const_cast<char *>("chip_id")))) == nullptr) {
-                LOG_DEBUG("kstat_read failed: %1% (%2%): chip_id for %3% thread is unavailable.", strerror(errno), errno, p_id);
-                continue;
-            }
-            chips.insert(knp->value.ui32);
-
-            if ((knp = reinterpret_cast<kstat_named_t *>(kstat_data_lookup(cpu_info, const_cast<char *>("core_id")))) == nullptr) {
-                LOG_DEBUG("kstat_read failed: %1% (%2%): core_id for %3% thread is unavailable.", strerror(errno), errno, p_id);
-                continue;
-            }
-            cores.insert(knp->value.ui32);
         }
 
-        kstat_close(kc);
         // Add the model facts
         if (!processor_list->empty()) {
             processors_value->add("models", move(processor_list));
