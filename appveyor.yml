@@ -1,37 +1,21 @@
 install:
   - ps: choco install 7zip.commandline
-
   - ps: choco install ruby -Version 2.0.0.57600
-  - ps: $env:PATH = "C:\tools\ruby200\bin;" + $env:PATH
-
-  - ps: (New-Object net.webclient).DownloadFile('http://downloads.sourceforge.net/project/mingw-w64/Toolchains%20targetting%20Win64/Personal%20Builds/mingw-builds/4.8.2/threads-win32/seh/x86_64-4.8.2-release-win32-seh-rt_v3-rev4.7z', "$pwd\x86_64-4.8.2-release-win32-seh-rt_v3-rev4.7z")
-  - ps: 7za x x86_64-4.8.2-release-win32-seh-rt_v3-rev4.7z | FIND /V "ing  "
-  - ps: $env:PATH += ";$pwd\mingw64\bin"
-
-  - ps: (New-Object net.webclient).DownloadFile('https://s3.amazonaws.com/kylo-pl-bucket/boost_1.55.0_mingw-w64_4.8.1.7z', "$pwd\boost_1.55.0_mingw-w64_4.8.1.7z")
-  - ps: 7za x boost_1.55.0_mingw-w64_4.8.1.7z | FIND /V "ing  "
-
+  - ps: choco install mingw -Version 4.8.3
+  - ps: $env:PATH = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
   - ps: mkdir -force C:\tools
-  - ps: mv boost_1.55.0_mingw-w64_4.8.1 C:\tools\boost_1.55.0_mingw-w64_4.8.1
 
-  - ps: (New-Object net.webclient).DownloadFile('https://yaml-cpp.googlecode.com/files/yaml-cpp-0.5.1.tar.gz', "$pwd\yaml-cpp-0.5.1.tar.gz")
-  - ps: 7za x yaml-cpp-0.5.1.tar.gz
-  - ps: 7za x yaml-cpp-0.5.1.tar | FIND /V "ing  "
+  - ps: (New-Object net.webclient).DownloadFile('https://s3.amazonaws.com/kylo-pl-bucket/boost_1_55_0-mingw-w64_4.8.3_posix_sjlj.7z', "$pwd\boost.7z")
+  - ps: 7za x boost.7z | FIND /V "ing  "
+  - ps: mv boost_1_55_0-mingw-w64_4.8.3_posix_sjlj C:\tools\boost
 
-  - ps: cd yaml-cpp-0.5.1
-  - ps: mkdir build
-  - ps: cd build
-
-  - ps: mv "C:\Program Files (x86)\Git\bin\sh.exe" "C:\Program Files (x86)\Git\bin\shxx.exe"
-  - ps: cmake -G "MinGW Makefiles" -DBOOST_ROOT=C:\tools\boost_1.55.0_mingw-w64_4.8.1 -DCMAKE_INSTALL_PREFIX=C:\tools\yamlcpp ..
-  - ps: mv "C:\Program Files (x86)\Git\bin\shxx.exe" "C:\Program Files (x86)\Git\bin\sh.exe"
-
-  - ps: mingw32-make install
-  - ps: cd ../..
+  - ps: (New-Object net.webclient).DownloadFile('https://s3.amazonaws.com/kylo-pl-bucket/yaml-cpp-0.5.1-mingw-w64_4.8.3_posix_sjlj.7z', "$pwd\yamlcpp.7z")
+  - ps: 7za x yamlcpp.7z | FIND /V "ing  "
+  - ps: mv yaml-cpp-0.5.1-mingw-w64_4.8.3_posix_sjlj C:\tools\yamlcpp
 
 build_script:
   - ps: mv "C:\Program Files (x86)\Git\bin\sh.exe" "C:\Program Files (x86)\Git\bin\shxx.exe"
-  - ps: cmake -G "MinGW Makefiles" -DBOOST_ROOT=C:\tools\boost_1.55.0_mingw-w64_4.8.1 -DYAMLCPP_ROOT=C:\tools\yamlcpp -DBOOST_STATIC=ON .
+  - ps: cmake -G "MinGW Makefiles" -DBOOST_ROOT=C:\tools\boost -DYAMLCPP_ROOT=C:\tools\yamlcpp -DBOOST_STATIC=ON .
   - ps: mv "C:\Program Files (x86)\Git\bin\shxx.exe" "C:\Program Files (x86)\Git\bin\sh.exe"
   - ps: mingw32-make all_unity
 
