@@ -1,7 +1,8 @@
 test_name "#7670: Facter should properly detect operatingsystem on Ubuntu after a clear"
 
 script_contents = <<-OS_DETECT
-  require 'facter'
+  require 'cfacter'
+  CFacter.initialize
   Facter['operatingsystem'].value
   Facter.clear
   exit Facter['operatingsystem'].value == 'Ubuntu'

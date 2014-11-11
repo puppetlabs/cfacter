@@ -17,10 +17,10 @@ end
 
 PACKAGES = {
   :redhat => [
-    'facter',
+    'cfacter',
   ],
   :debian => [
-    'facter',
+    'cfacter',
   ],
 #  :solaris => [
 #    'puppet',

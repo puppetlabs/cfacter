@@ -16,11 +16,11 @@ end
 
 # Read in both the json meta-schema and the facter schema
 JSON_META_SCHEMA = JSON.parse(File.read('schema/json-meta-schema.json'))
-FACTER_SCHEMA    = JSON.parse(File.read("schema/facter.json"))
+CFACTER_SCHEMA    = JSON.parse(File.read("schema/cfacter.json"))
 
-# Validate that the facter schema itself is valid json
-validate(JSON_META_SCHEMA, FACTER_SCHEMA, "facter schema")
+# Validate that the cfacter schema itself is valid json
+validate(JSON_META_SCHEMA, CFACTER_SCHEMA, "cfacter schema")
 
-# Validate that the output facts match the facter schema
-facts  = `bundle exec facter --json`
-validate(FACTER_SCHEMA, facts, "facts")
+# Validate that the output facts match the cfacter schema
+facts  = `bundle exec cfacter --json`
+validate(CFACTER_SCHEMA, facts, "facts")

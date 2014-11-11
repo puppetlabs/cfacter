@@ -1,4 +1,4 @@
-test_name "#22944: Facter executes external executable facts many times"
+test_name "#22944: CFacter executes external executable facts many times"
 
 unix_content = <<EOM
 #!/bin/sh
@@ -16,7 +16,7 @@ agents.each do |agent|
 
   # assume we're running as root
   if agent['platform'] =~ /windows/
-    if on(agent, facter('kernelmajversion')).stdout.chomp.to_f < 6.0
+    if on(agent, cfacter('kernelmajversion')).stdout.chomp.to_f < 6.0
       factsd = 'C:/Documents and Settings/All Users/Application Data/PuppetLabs/facter/facts.d'
     else
       factsd = 'C:/ProgramData/PuppetLabs/facter/facts.d'
@@ -47,7 +47,7 @@ agents.each do |agent|
   on(agent, "chmod +x '#{ext_fact}'")
 
   step "Agent #{agent}: ensure it only executes once"
-  on(agent, facter) do
+  on(agent, cfacter) do
     lines = stderr.split('\n')
     times = lines.count { |line| line =~ /SCRIPT CALLED/ }
     if times == 1

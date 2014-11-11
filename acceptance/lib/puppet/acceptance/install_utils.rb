@@ -131,7 +131,7 @@ module Puppet
               platform_configs_dir
             )
 
-            pattern = "pl-facter-%s-%s-%s%s-%s.repo"
+            pattern = "pl-cfacter-%s-%s-%s%s-%s.repo"
             repo_filename = pattern % [
               sha,
               variant,
@@ -140,14 +140,14 @@ module Puppet
               arch
             ]
             repo = fetch(
-              "http://builds.puppetlabs.lan/facter/%s/repo_configs/rpm/" % sha,
+              "http://builds.puppetlabs.lan/cfacter/%s/repo_configs/rpm/" % sha,
               repo_filename,
               platform_configs_dir
             )
 
-            link = "http://builds.puppetlabs.lan/facter/%s/repos/%s/%s%s/products/%s/" % [sha, variant, fedora_prefix, version, arch]
+            link = "http://builds.puppetlabs.lan/cfacter/%s/repos/%s/%s%s/products/%s/" % [sha, variant, fedora_prefix, version, arch]
             if not link_exists?(link)
-              link = "http://builds.puppetlabs.lan/facter/%s/repos/%s/%s%s/devel/%s/" % [sha, variant, fedora_prefix, version, arch]
+              link = "http://builds.puppetlabs.lan/cfacter/%s/repos/%s/%s%s/devel/%s/" % [sha, variant, fedora_prefix, version, arch]
             end
             if not link_exists?(link)
               raise "Unable to reach a repo directory at #{link}"
@@ -176,12 +176,12 @@ module Puppet
             )
 
             list = fetch(
-              "http://builds.puppetlabs.lan/facter/%s/repo_configs/deb/" % sha,
-              "pl-facter-%s-%s.list" % [sha, version],
+              "http://builds.puppetlabs.lan/cfacter/%s/repo_configs/deb/" % sha,
+              "pl-cfacter-%s-%s.list" % [sha, version],
               platform_configs_dir
             )
 
-            repo_dir = fetch_remote_dir("http://builds.puppetlabs.lan/facter/%s/repos/apt/%s" % [sha, version], platform_configs_dir)
+            repo_dir = fetch_remote_dir("http://builds.puppetlabs.lan/cfacter/%s/repos/apt/%s" % [sha, version], platform_configs_dir)
 
             on host, "rm -rf /root/*.list; rm -rf /root/*.deb; rm -rf /root/#{version}"
 
