@@ -9,6 +9,20 @@
 
 namespace facter { namespace util {
 
+    /*
+     * Exception that is thrown when the environment variable exceeds the
+     * OS-specified length limit. This is added as a security precaution
+     * against too-long environment variables.
+     */
+    struct environment_too_long_exception : std::runtime_error
+    {
+        /**
+         * Constructs an environment_too_long_exception.
+         * @param message The exception message.
+         */
+        explicit environment_too_long_exception(std::string const& message);
+    };
+
     /**
      * Represents a platform-agnostic way for manipulating environment variables.
      */
