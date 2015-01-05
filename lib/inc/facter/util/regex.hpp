@@ -152,7 +152,7 @@ namespace facter { namespace util {
             return false;
         }
 
-        return re_search_helper(txt, what, 1, std::forward<Args>(args)...);
+        return re_search_helper(txt, what, 1u, std::forward<Args>(args)...);
     }
 #endif
 
