@@ -47,6 +47,6 @@ addons:
       name: "puppetlabs/cfacter"
       description: "Build submitted via Travis CI"
     notification_email: michael.smith@puppetlabs.com
-    build_command_prepend: "cmake -DCMAKE_BUILD_TYPE=Debug .; make clean"
+    build_command_prepend: "$HOME/bin/cmake -DCMAKE_BUILD_TYPE=Debug .; make clean"
     build_command:   "make -j 4"
     branch_pattern: coverity_scan
