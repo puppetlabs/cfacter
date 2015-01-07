@@ -11,6 +11,11 @@ CFLAGS      :=$(shell dpkg-buildflags --get CFLAGS)
 CXXFLAGS    :=$(shell dpkg-buildflags --get CXXFLAGS)
 LDFLAGS     :=$(shell dpkg-buildflags --get LDFLAGS)
 NUMPROC     :=$(shell expr $$(nproc) + 1)
+RUBY_LIBDIR = $(ruby -rrbconfig -e "puts RbConfig::CONFIG['vendorlibdir']")
+# For Ruby 1.8
+# /usr/lib/ruby/vendor_ruby/1.8
+# For Ruby 1.9
+# /usr/lib/ruby/vendor_ruby/1.9.1
 
 export CPPFLAGS CFLAGS CXXFLAGS LDFLAGS
 
@@ -31,6 +36,10 @@ override_dh_auto_build:
 override_dh_auto_install:
 	$(MAKE) -j$(NUMPROC) install DESTDIR=$(CURDIR)/debian/tmp
 	rm -r $(CURDIR)/debian/tmp$(PREFIX)/include/boost
+	mkdir -p -m 755 $(CURDIR)/debian/tmp$(RUBY_LIBDIR)
+	install -c -p -m 0644 gem/lib/cfacter.rb $(CURDIR)/debian/tmp$(RUBY_LIBDIR)/cfacter.rb
+
+override_dh_auto_test:
 
 %:
 	dh $@ --parallel=$(NUMPROC)
