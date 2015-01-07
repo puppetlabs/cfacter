@@ -39,5 +39,8 @@ override_dh_auto_install:
 	mkdir -p -m 755 $(CURDIR)/debian/tmp$(RUBY_LIBDIR)
 	install -c -p -m 0644 gem/lib/cfacter.rb $(CURDIR)/debian/tmp$(RUBY_LIBDIR)/cfacter.rb
 
+override_dh_auto_test:
+	$(BUILDPREFIX)/bin/ctest -V
+
 %:
 	dh $@ --parallel=$(NUMPROC)
