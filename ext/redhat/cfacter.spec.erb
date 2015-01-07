@@ -89,6 +89,9 @@ install -c -p -m 0644 gem/lib/cfacter.rb %{buildroot}%{ruby_libdir}/cfacter.rb
 # These files are needed at buildtime, but not at runtime
 rm -r %{buildroot}%{_includedir}/boost
 
+%check
+%{build_prefix}/bin/ctest -V
+
 %clean
 rm -rf %{buildroot}
 
