@@ -1,3 +1,5 @@
+%{!?ruby_vendordir: %define ruby_vendordir %(ruby -rrbconfig -e "puts RbConfig::CONFIG['vendordir']")}
+
 # Building debuginfo is pointless, as this has no symbols.
 %global debug_package %{nil}
 
@@ -93,6 +95,7 @@ rm -rf %{buildroot}
 %{_bindir}/cfacter
 %{_libdir}/libfacter.so*
 %{_includedir}/facter
+%{ruby_vendordir}/cfacter.rb
 %doc LICENSE README.md
 
 
