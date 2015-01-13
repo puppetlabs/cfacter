@@ -23,6 +23,7 @@ override_dh_auto_configure:
 	-DCMAKE_INSTALL_PREFIX=$(PREFIX) \
 	-DBOOST_STATIC=ON \
 	-DYAMLCPP_STATIC=ON \
+	-D_RUBY_DEBUG_OUTPUT=TRUE \
 	.
 
 override_dh_auto_build:

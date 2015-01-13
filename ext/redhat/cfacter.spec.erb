@@ -72,6 +72,7 @@ rm -rf %{buildroot}
   -DCMAKE_INSTALL_PREFIX=%{_prefix} \
   -DBOOST_STATIC=ON \
   -DYAMLCPP_STATIC=ON \
+  -D_RUBY_DEBUG_OUTPUT=TRUE \
   .
   make %{?_smp_mflags} DESTDIR=%{buildroot}
 
