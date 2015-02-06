@@ -44,8 +44,23 @@ set(LIBFACTER_TESTS_COMMON_SOURCES
 set(CMAKE_CXX_FLAGS ${FACTER_CXX_FLAGS})
 
 # Add the ruby tests if there's a ruby installed
-if (RUBY_FOUND)
+if ($ENV{FACTERRUBY})
+    set(LIBRUBY $ENV{FACTERRUBY})
+elseif (RUBY_VERSION VERSION_GREATER '1.8.7' AND RUBY_EXECUTABLE)
+    execute_process(COMMAND ${RUBY_EXECUTABLE} -rrbconfig -e "puts RbConfig::CONFIG['LIBRUBYARG_SHARED']" OUTPUT_VARIABLE RUBY_LIBARG_OUT)
+    string(STRIP ${RUBY_LIBARG_OUT} RUBY_LIBARG)
+    
+    if (RUBY_LIBARG)
+        execute_process(COMMAND ${RUBY_EXECUTABLE} -rrbconfig -e "puts RbConfig::CONFIG['LIBRUBY_SO']" OUTPUT_VARIABLE RUBY_LIBRUBY_OUT)
+        string(STRIP ${RUBY_LIBRUBY_OUT} LIBRUBY)
+    endif()
+endif()
+
+if (LIBRUBY)
+    message(STATUS "Ruby library ${LIBRUBY} found, ruby-specific tests are enabled.")
     set(LIBFACTER_TESTS_COMMON_SOURCES ${LIBFACTER_TESTS_COMMON_SOURCES} "ruby/ruby.cc")
+else()
+    message(WARNING "Ruby not found, or is statically linked; ruby-specific tests are disabled.")
 endif()
 
 # Set the POSIX sources if on a POSIX platform
