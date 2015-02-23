@@ -5,14 +5,7 @@
 using namespace std;
 using namespace facter::facts;
 
-#ifdef LOG_NAMESPACE
-  #undef LOG_NAMESPACE
-#endif
-#define LOG_NAMESPACE "ruby"
-
 namespace facter { namespace ruby {
-
-    template struct object<resolution>;
 
     resolution::resolution() :
         _has_weight(false),
@@ -193,7 +186,7 @@ namespace facter { namespace ruby {
             ruby.rb_raise(*ruby.rb_eArgError, "wrong number of arguments (%d for 1)", argc);
         }
 
-        from_self(self)->confine(argc == 0 ? ruby.nil_value() : argv[0]);
+        ruby.to_native<resolution>(self)->confine(argc == 0 ? ruby.nil_value() : argv[0]);
         return self;
     }
 
@@ -201,7 +194,7 @@ namespace facter { namespace ruby {
     {
         auto const& ruby = *api::instance();
 
-        auto instance = from_self(self);
+        auto instance = ruby.to_native<resolution>(self);
         instance->_has_weight = true;
         instance->_weight = static_cast<size_t>(ruby.rb_num2ulong(value));
         return self;
@@ -209,7 +202,8 @@ namespace facter { namespace ruby {
 
     VALUE resolution::ruby_name(VALUE self)
     {
-        return from_self(self)->name();
+        auto const& ruby = *api::instance();
+        return ruby.to_native<resolution>(self)->name();
     }
 
     VALUE resolution::ruby_timeout(VALUE self, VALUE timeout)
@@ -231,7 +225,7 @@ namespace facter { namespace ruby {
             ruby.rb_raise(*ruby.rb_eArgError, "a block must be provided");
         }
 
-        from_self(self)->_flush_block = ruby.rb_block_proc();
+        ruby.to_native<resolution>(self)->_flush_block = ruby.rb_block_proc();
         return self;
     }
 

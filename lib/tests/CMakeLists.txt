@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.12)
 
-find_package(Ruby)
+find_package(Ruby 1.9)
 
 # Set the common (platform-independent) sources
 set(LIBFACTER_TESTS_COMMON_SOURCES
@@ -44,7 +44,7 @@ set(LIBFACTER_TESTS_COMMON_SOURCES
 set(CMAKE_CXX_FLAGS ${FACTER_CXX_FLAGS})
 
 # Add the ruby tests if there's a ruby installed
-if (RUBY_VERSION VERSION_GREATER '1.8.7')
+if (RUBY_FOUND)
     set(LIBFACTER_TESTS_COMMON_SOURCES ${LIBFACTER_TESTS_COMMON_SOURCES} "ruby/ruby.cc")
 endif()
 
@@ -90,18 +90,18 @@ include_directories(
     ../inc
     ${Boost_INCLUDE_DIRS}
     ${NOWIDE_INCLUDE_DIRS}
-    ${GMOCK_INCLUDE_DIRS}
     ${OPENSSL_INCLUDE_DIRS}
     ${YAMLCPP_INCLUDE_DIRS}
+    ${CATCH_INCLUDE_DIRS}
 )
 
 add_executable(libfacter_test ${LIBFACTER_TESTS_COMMON_SOURCES} ${LIBFACTER_TESTS_PLATFORM_SOURCES} ${LIBFACTER_TESTS_CATEGORY_SOURCES})
-set_target_properties(libfacter_test PROPERTIES COTIRE_UNITY_LINK_LIBRARIES_INIT "COPY_UNITY" COTIRE_ENABLE_PRECOMPILED_HEADER ${PRECOMPILED_HEADERS})
-target_link_libraries(libfacter_test libfacter ${YAMLCPP_LIBRARIES} ${Boost_LIBRARIES} ${GMOCK_LIBRARIES} ${OPENSSL_LIBRARIES} ${NOWIDE_SHARED})
+set_target_properties(libfacter_test PROPERTIES COTIRE_UNITY_LINK_LIBRARIES_INIT "COPY_UNITY" COTIRE_ENABLE_PRECOMPILED_HEADER ${PRECOMPILED_HEADERS} COTIRE_ADD_UNITY_BUILD FALSE)
+target_link_libraries(libfacter_test libfacter ${YAMLCPP_LIBRARIES} ${Boost_LIBRARIES} ${OPENSSL_LIBRARIES} ${NOWIDE_SHARED})
 
 cotire(libfacter_test)
 
-# Generate a file containing the above version numbers
+# Generate a file containing the path to the fixtures
 configure_file (
     "fixtures.hpp.in"
     "${CMAKE_CURRENT_LIST_DIR}/fixtures.hpp"

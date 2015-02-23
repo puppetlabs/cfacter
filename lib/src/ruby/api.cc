@@ -15,11 +15,6 @@ using namespace facter::facts;
 using namespace facter::util;
 using namespace boost::filesystem;
 
-#ifdef LOG_NAMESPACE
-  #undef LOG_NAMESPACE
-#endif
-#define LOG_NAMESPACE "ruby"
-
 namespace facter { namespace ruby {
 
 #define LOAD_SYMBOL(x) x(reinterpret_cast<decltype(x)>(library.find_symbol(#x, true)))
@@ -28,6 +23,8 @@ namespace facter { namespace ruby {
 
     // Default to cleaning up the VM on shutdown
     bool api::cleanup = true;
+
+    set<VALUE> api::_data_objects;
 
     api::api(dynamic_library library) :
         LOAD_SYMBOL(rb_intern),
@@ -98,14 +95,22 @@ namespace facter { namespace ruby {
         LOAD_SYMBOL(ruby_init),
         LOAD_SYMBOL(ruby_options),
         LOAD_SYMBOL(ruby_cleanup),
-        _library(move(library)),
-        _initialized(false),
-        _include_stack_trace(false)
+        _library(move(library))
     {
     }
 
     api::~api()
     {
+        // API is shutting down; free all remaining data objects
+        // Destructors may unregister the data object, so increment the iterator before freeing
+        for (auto it = _data_objects.begin(); it != _data_objects.end();) {
+            auto data = reinterpret_cast<RData*>(*it);
+            ++it;
+            if (data->dfree) {
+                data->dfree(data->data);
+                data->dfree = nullptr;
+            }
+        }
         if (_initialized && _library.first_load() && cleanup) {
             ruby_cleanup(0);
         }

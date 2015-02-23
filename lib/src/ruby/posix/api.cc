@@ -12,11 +12,6 @@ using namespace facter::util;
 using namespace facter::execution;
 using namespace boost::filesystem;
 
-#ifdef LOG_NAMESPACE
-  #undef LOG_NAMESPACE
-#endif
-#define LOG_NAMESPACE "ruby"
-
 namespace facter { namespace ruby {
 
     dynamic_library api::find_library()
@@ -27,10 +22,17 @@ namespace facter { namespace ruby {
             return library;
         }
 
+#ifdef FACTER_RUBY
+        // Ruby lib location was specified at compile-time, fix to that.
+        if (!library.load(FACTER_RUBY)) {
+            LOG_WARNING("ruby library \"%1%\" could not be loaded.", FACTER_RUBY);
+        }
+        return library;
+#else
         // Next try an environment variable
         // This allows users to directly specify the ruby version to use
         string value;
-        if (environment::get("FACTER_RUBY", value)) {
+        if (environment::get("FACTERRUBY", value)) {
             if (library.load(value)) {
                 return library;
             } else {
@@ -132,6 +134,7 @@ namespace facter { namespace ruby {
             library.load(libruby);
         }
         return library;
+#endif
     }
 
 }}  // namespace facter::ruby

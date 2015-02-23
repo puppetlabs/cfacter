@@ -80,7 +80,7 @@ namespace facter { namespace ruby {
                 temp = ruby.rb_funcall(value, ruby.rb_intern("to_s"), 0);
             }
 
-            size_t size = static_cast<size_t>(ruby.rb_num2ulong(ruby.rb_funcall(temp, ruby.rb_intern("size"), 0)));
+            size_t size = static_cast<size_t>(ruby.rb_num2ulong(ruby.rb_funcall(temp, ruby.rb_intern("bytesize"), 0)));
             char const* str = ruby.rb_string_value_ptr(&temp);
             json.SetString(str, size, allocator);
             return;
@@ -110,6 +110,10 @@ namespace facter { namespace ruby {
             json.SetObject();
 
             ruby.hash_for_each(value, [&](VALUE key, VALUE element) {
+                // If the key isn't a string, convert to string
+                if (!ruby.is_string(key)) {
+                    key = ruby.rb_funcall(key, ruby.rb_intern("to_s"), 0);
+                }
                 rapidjson::Value e;
                 to_json(ruby, element, allocator, e);
                 json.AddMember(ruby.rb_string_value_ptr(&key), e, allocator);
@@ -138,7 +142,7 @@ namespace facter { namespace ruby {
                 temp = ruby.rb_funcall(value, ruby.rb_intern("to_s"), 0);
             }
 
-            size_t size = static_cast<size_t>(ruby.rb_num2ulong(ruby.rb_funcall(temp, ruby.rb_intern("size"), 0)));
+            size_t size = static_cast<size_t>(ruby.rb_num2ulong(ruby.rb_funcall(temp, ruby.rb_intern("bytesize"), 0)));
             char const* str = ruby.rb_string_value_ptr(&temp);
 
             if (quoted) {
@@ -202,7 +206,7 @@ namespace facter { namespace ruby {
                     key = ruby.rb_funcall(key, ruby.rb_intern("to_s"), 0);
                 }
 
-                size_t size = static_cast<size_t>(ruby.rb_num2ulong(ruby.rb_funcall(key, ruby.rb_intern("size"), 0)));
+                size_t size = static_cast<size_t>(ruby.rb_num2ulong(ruby.rb_funcall(key, ruby.rb_intern("bytesize"), 0)));
                 char const* str = ruby.rb_string_value_ptr(&key);
 
                 fill_n(ostream_iterator<char>(os), level * 2, ' ');

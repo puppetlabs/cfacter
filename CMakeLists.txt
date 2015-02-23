@@ -10,6 +10,21 @@ option(BOOST_STATIC "Use Boost's static libraries" OFF)
 option(YAMLCPP_STATIC "Use yaml-cpp's static libraries" OFF)
 option(COVERALLS "Generate code coverage for Coveralls.io" OFF)
 
+set(FACTER_PATH "" CACHE PATH "Specify the location to look for specific binaries before trying PATH.")
+if (FACTER_PATH)
+    # Specify a preferred location for binary lookup that will be prioritized over PATH.
+    file(TO_CMAKE_PATH ${FACTER_PATH} FACTER_PATH_FIXED)
+    add_definitions(-DFACTER_PATH="${FACTER_PATH_FIXED}")
+    message(STATUS "Prioritizing binary lookup in ${FACTER_PATH_FIXED}")
+endif()
+
+set(FACTER_RUBY "" CACHE FILEPATH "Specify the location of libruby at compile-time, bypassing dynamic lookup.")
+if (FACTER_RUBY)
+    file(TO_CMAKE_PATH ${FACTER_RUBY} FACTER_RUBY_PATH)
+    add_definitions(-DFACTER_RUBY="${FACTER_RUBY_PATH}")
+    message(STATUS "Fixing lookup for libruby to ${FACTERPATH_PATH}")
+endif()
+
 enable_testing()
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
@@ -45,6 +60,8 @@ if (WIN32)
     list(APPEND BOOST_PKGS locale)
 endif()
 find_package(Boost 1.54 REQUIRED COMPONENTS ${BOOST_PKGS})
+
+find_package(Ruby 1.9)
 
 find_package(YAMLCPP REQUIRED)
 if (NOT WITHOUT_OPENSSL)
@@ -137,14 +154,11 @@ if (WIN32)
     # in the same directory to avoid having to setup the DLL search path in the dev environment.
     set(LIBRARY_OUTPUT_PATH    ${PROJECT_BINARY_DIR}/bin)
 
-    # We use networking APIs that require Windows Vista as a minimum. See
-    # http://msdn.microsoft.com/en-us/library/windows/desktop/aa383745(v=vs.85).aspx
-    # for version strings.
-    # Supporting Windows Server 2003 requires
-    # - using GetAdaptersInfo to get the network mask and Dhcp server; IPv6 mask may not be supported.
-    # - Use WSA functions for sockaddr to string conversion, which includes more costly WSAStartup.
-    # We currently load IsWow64Process from a DLL, but with these definitions that could be statically linked.
-    add_definitions(-DWINVER=0x0600 -D_WIN32_WINNT=0x0600)
+    # We currently support Windows Server 2003, which requires using deprecated APIs.
+    # See http://msdn.microsoft.com/en-us/library/windows/desktop/aa383745(v=vs.85).aspx for version strings.
+    # When Server 2003 support is discontinued, the networking facts implementation can be cleaned up, and
+    # we can statically link symbols that are currently being looked up at runtime.
+    # add_definitions(-DWINVER=0x0600 -D_WIN32_WINNT=0x0600)
 
     # The GetUserNameEx function requires the application have a defined security level.
     # We define security sufficient to get the current user's info.
@@ -159,17 +173,24 @@ else()
     set(BOOST_NOWIDE_SKIP_TESTS ON CACHE BOOL "Disable tests in Boost.Nowide")
 endif()
 
+# Disable installing Boost.Nowide so we don't pollute the installation.
+set(BOOST_NOWIDE_SKIP_INSTALL ON CACHE BOOL "Disable installing Boost.Nowide")
+
 # Boost compilation options
 add_definitions(-DBOOST_LOG_WITHOUT_WCHAR_T)
 
 # Include vendor libraries
-add_subdirectory(vendor/gmock-1.7.0)
+set(CATCH_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/vendor/catch/include")
 set(RAPIDJSON_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/vendor/rapidjson-0.11/include")
 add_subdirectory(vendor/boost-nowide)
 set(NOWIDE_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/vendor/boost-nowide")
 if (WIN32)
     # Library only built on Windows, it would be empty on other platforms.
     set(NOWIDE_LIBRARIES nowide-shared)
+
+    # We disabled installing Boost.Nowide; add back the library we use.
+    # CMake doesn't allow install targets in a different directory, so get the file.
+    install(FILES ${CMAKE_BINARY_DIR}/bin/libnowide.dll DESTINATION bin)
 endif()
 
 #
@@ -180,6 +201,8 @@ if (NOT PYTHONINTERP_FOUND)
     message(STATUS "Python not found; 'cpplint' target will not be available")
 else()
     set(CPPLINT_FILTER
+        "-build/c++11"            # <thread>, <condvar>, etc...
+        "-whitespace/indent"      # We use 4 space indentation
         "-build/include"          # Why?
         "-build/namespaces"       # What's a namespace to do
         "-legal/copyright"        # Not yet
@@ -196,7 +219,7 @@ else()
         "-build/header_guard"     # Disable header guards (cpplint doesn't yet support enforcing #pragma once)
     )
 
-    file(GLOB_RECURSE ALL_SOURCES lib/*.cc lib/*.h lib/*.hpp exe/*.cc exe/*.h exe/*.hpp)
+    file(GLOB_RECURSE ALL_SOURCES lib/src/*.cc lib/src/*.h lib/src/*.hpp lib/inc/*.hpp lib/inc/*.h exe/*.cc exe/*.hpp exe/*.h)
 
     set(CPPLINT_PATH "${PROJECT_SOURCE_DIR}/scripts/cpplint.py")
 
@@ -216,11 +239,12 @@ else()
 endif()
 
 add_custom_target(cppcheck
-    COMMAND cppcheck --enable=performance "${PROJECT_SOURCE_DIR}/lib" "${PROJECT_SOURCE_DIR}/exe"
+    COMMAND cppcheck --enable=warning,performance --error-exitcode=2 --quiet "${PROJECT_SOURCE_DIR}/lib" "${PROJECT_SOURCE_DIR}/exe"
 )
 
 add_subdirectory(lib)
 add_subdirectory(exe)
 
 # Add test executables for unit testing
-add_test(NAME "library\\ tests" COMMAND libfacter_test --gtest_color=yes)
+add_test(NAME "library\\ tests" COMMAND libfacter_test)
+add_test(NAME "cfacter\\ smoke" COMMAND cfacter)

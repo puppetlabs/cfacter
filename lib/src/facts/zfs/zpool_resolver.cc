@@ -12,16 +12,10 @@
 #include <string>
 #include <map>
 
-
 using namespace std;
 using namespace facter::facts;
 using namespace facter::util;
 using namespace facter::execution;
-
-#ifdef LOG_NAMESPACE
-  #undef LOG_NAMESPACE
-#endif
-#define LOG_NAMESPACE "facts.zfs.zpool"
 
 namespace facter { namespace facts { namespace zfs {
 
@@ -140,7 +134,6 @@ namespace facter { namespace facts { namespace zfs {
         * Solaris ZFS still follows a simple linear versioning
         */
          string val;
-         string version;
          vector<string> nver;
          re_adapter re_zpool_nversion("\\s*(\\d+)[ ]");
          execution::each_line(zpool_cmd(), {"upgrade", "-v"}, [&] (string& line) {

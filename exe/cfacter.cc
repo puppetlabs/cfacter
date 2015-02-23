@@ -28,11 +28,6 @@ using namespace facter::facts;
 using namespace facter::ruby;
 namespace po = boost::program_options;
 
-#ifdef LOG_NAMESPACE
-  #undef LOG_NAMESPACE
-#endif
-#define LOG_NAMESPACE "main"
-
 void help(po::options_description& desc)
 {
     boost::nowide::cout <<
@@ -107,11 +102,11 @@ int main(int argc, char **argv)
 {
     using namespace facter::logging;
 
-    // Fix args on Windows to be UTF-8
-    boost::nowide::args arg_utf8(argc, argv);
-
     try
     {
+        // Fix args on Windows to be UTF-8
+        boost::nowide::args arg_utf8(argc, argv);
+
         // Setup logging
         setup_logging(boost::nowide::cerr);
 
@@ -251,6 +246,9 @@ int main(int argc, char **argv)
             facts.add_external_facts(external_directories);
         }
 
+        // Add the environment facts
+        facts.add_environment_facts();
+
         if (ruby) {
             module mod(facts, custom_directories);
             mod.resolve_facts();
@@ -267,6 +265,7 @@ int main(int argc, char **argv)
         boost::nowide::cout << endl;
     } catch (exception& ex) {
         LOG_FATAL("unhandled exception: %1%", ex.what());
-        return EXIT_FAILURE;
     }
+
+    return error_has_been_logged() ? EXIT_FAILURE : EXIT_SUCCESS;
 }

@@ -15,11 +15,6 @@ using namespace facter::util::posix;
 using namespace facter::logging;
 using namespace boost::filesystem;
 
-#ifdef LOG_NAMESPACE
-  #undef LOG_NAMESPACE
-#endif
-#define LOG_NAMESPACE "execution"
-
 // Declare environ for OSX
 extern char** environ;
 
@@ -115,9 +110,6 @@ namespace facter { namespace execution {
         // A non-zero child pid means we're running in the context of the parent process
         if (child)
         {
-            // Get a special logger used specifically for child process output
-            std::string logger = "|";
-
             // Close the unused descriptors
             stdin_read.release();
             stdout_write.release();
@@ -134,7 +126,7 @@ namespace facter { namespace execution {
                     // The call to read was interrupted by a signal before any data was read. Retry read.
                     // See http://www.gnu.org/software/libc/manual/html_node/Interrupted-Primitives.html
                     // This happens in Xcode's debugging.
-                    LOG_DEBUG("child pipe read was interrupted and will be retried: %1% (%2%).", strerror(errno), errno);
+                    LOG_DEBUG("child pipe read was interrupted and will be retried.");
                     errno = 0;
                     buffer.resize(0);
                     return true;

@@ -18,15 +18,9 @@
 #include <functional>
 
 /**
- * Defines the root logging namespace.
+ * Defines the logging namespace.
  */
-#define LOG_ROOT_NAMESPACE "puppetlabs.facter."
-
-/**
- * Used to declare a logging namespace for a source file.
- * This macro should be redefined before using any logging macro.
- */
-#define LOG_NAMESPACE "default"
+#define LOG_NAMESPACE "puppetlabs.facter"
 
 /**
  * Logs a message.
@@ -36,7 +30,7 @@
  */
 #define LOG_MESSAGE(level, format, ...) \
     if (facter::logging::is_enabled(level)) { \
-        facter::logging::log(LOG_ROOT_NAMESPACE LOG_NAMESPACE, level, format, ##__VA_ARGS__); \
+        facter::logging::log(LOG_NAMESPACE, level, format, ##__VA_ARGS__); \
     }
 /**
  * Logs a trace message.
@@ -194,6 +188,19 @@ namespace facter { namespace logging {
      * @return Returns true if the logging level is enabled or false if it is not.
      */
     bool is_enabled(log_level level);
+
+    /**
+     * Determine if an error has been logged
+     * @return Returns true if an error or critical message has been logged
+     */
+    bool error_has_been_logged();
+
+    /**
+     * Clear the flag that indicates an error has been logged.
+     * This is necessary for testing the flagging functionality. This function should
+     * not be used by library consumers.
+     */
+    void clear_error_logged_flag();
 
     /**
      * Logs a given message to the given logger.

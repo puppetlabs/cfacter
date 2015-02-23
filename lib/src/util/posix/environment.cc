@@ -1,8 +1,12 @@
 #include <facter/util/environment.hpp>
 #include <boost/algorithm/string.hpp>
 #include <functional>
+#include <unistd.h>
 
 using namespace std;
+
+// Some platforms need environ explicitly declared
+extern char** environ;
 
 namespace facter { namespace util {
 
@@ -45,6 +49,27 @@ namespace facter { namespace util {
     void environment::reload_search_paths()
     {
         helper = search_path_helper();
+    }
+
+    void environment::each(function<bool(string&, string&)> callback)
+    {
+        // Enumerate all environment variables
+        for (char const* const* variable = environ; *variable; ++variable) {
+            string pair = *variable;
+            string name;
+            string value;
+
+            auto pos = pair.find('=');
+            if (pos == string::npos) {
+                name = move(pair);
+            } else {
+                name = pair.substr(0, pos);
+                value = pair.substr(pos + 1);
+            }
+            if (!callback(name, value)) {
+                break;
+            }
+        }
     }
 
 }}  // namespace facter::util

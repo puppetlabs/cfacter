@@ -22,11 +22,6 @@ using namespace boost::filesystem;
 using boost::lexical_cast;
 using boost::bad_lexical_cast;
 
-#ifdef LOG_NAMESPACE
-  #undef LOG_NAMESPACE
-#endif
-#define LOG_NAMESPACE "facts.linux.filesystem"
-
 namespace facter { namespace facts { namespace linux {
 
     filesystem_resolver::data filesystem_resolver::collect_data(collection& facts)
@@ -139,12 +134,14 @@ namespace facter { namespace facts { namespace linux {
                     boost::to_lower(attribute);
                     if (attribute == "type") {
                         ptr = &part.filesystem;
-                    } else if (attribute == "partlabel") {
+                    } else if (attribute == "label") {
                         ptr = &part.label;
+                    } else if (attribute == "partlabel") {
+                        ptr = &part.partition_label;
                     } else if (attribute == "uuid") {
                         ptr = &part.uuid;
                     } else if (attribute == "partuuid") {
-                        ptr = &part.partuuid;
+                        ptr = &part.partition_uuid;
                     }
                     if (!ptr) {
                         continue;

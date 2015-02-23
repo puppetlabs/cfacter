@@ -1,4 +1,30 @@
-$env:TEMP='C:\cygwin64\tmp'
+### Set variables from command line
+# $arch => Choose 32 or 64-bit build
+# $cores => Set the number of cores to use for parallel builds
+# $buildSource => Choose whether to download pre-built libraries or build from source
+param (
+[int] $arch=64,
+[int] $cores=2,
+[bool] $buildSource=$FALSE,
+[string] $cfacterRef='origin/master',
+[string] $cfacterFork='git://github.com/puppetlabs/cfacter'
+)
+
+# Ensure TEMP directory is set and exists. Git.install can fail otherwise.
+try {
+    if (!(Test-Path $env:TEMP)) { throw }
+} catch {
+    $env:TEMP = Join-Path $env:SystemDrive 'temp'
+    echo "TEMP not correct, setting to $env:TEMP"
+}
+if (!(Test-Path $env:TEMP)) {
+    mkdir -Path $env:TEMP
+    echo "TEMP dir $env:TEMP created"
+}
+
+if ($env:Path -eq $null) {
+    echo "Path is null?"
+}
 
 # Starting from a base Windows Server 2008r2 or 2012r2 installation, install required tools, setup the PATH, and download and build software.
 # This script can be run directly from the web using "iex ((new-object net.webclient).DownloadString('<url_to_raw>'))"
@@ -7,61 +33,76 @@ $env:TEMP='C:\cygwin64\tmp'
 ## Setup the working directory
 $sourceDir=$pwd
 
-## Set the number of cores to use for parallel builds
-$cores=2
+echo $arch
+echo $cores
+echo $buildSource
 
-## Choose whether to download pre-built libraries or build from source
-$buildSource=$FALSE
-
-## Choose 32 or 64-bit build
-$arch=64
 
 $mingwVerNum = "4.8.3"
-$mingwVerChoco = "${mingwVerNum}.20141208"
-$mingwThreads = "posix"
+$mingwVerChoco = $mingwVerNum
+$mingwThreads = "win32"
 if ($arch -eq 64) {
   $mingwExceptions = "seh"
   $mingwArch = "x86_64"
 } else {
-  $mingwExceptions = "dwarf"
+  $mingwExceptions = "sjlj"
   $mingwArch = "i686"
 }
 $mingwVer = "${mingwArch}_mingw-w64_${mingwVerNum}_${mingwThreads}_${mingwExceptions}"
 
-$boostVerNum = "1.55.0"
-$boostVer = "boost_$(${boostVerNum}.Replace('.', '_'))"
+$boostVer = "boost_1_55_0"
 $boostPkg = "${boostVer}-${mingwVer}"
 
-$yamlCppVerNum = "0.5.1"
-$yamlCppVer = "yaml-cpp-${yamlCppVerNum}"
+$yamlCppVer = "yaml-cpp-0.5.1"
 $yamlPkg = "${yamlCppVer}-${mingwVer}"
 
 ### Setup, build, and install
 ## Install Chocolatey, then use it to install required tools.
-iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))
-choco install 7zip.commandline -Version 9.20.0.20130618
-choco install cmake -Version 3.0.2
-choco install git.install -Version 1.9.5
-choco install ruby -Version 2.1.3.0
-choco install python -Version 3.4.2
-choco install doxygen.install -Version 1.8.8
-choco install mingw -Version "${mingwVerChoco}"
+Function Install-Choco ($pkg, $ver, $opts = "") {
+    echo "Installing $pkg $ver from https://www.myget.org/F/puppetlabs"
+    try {
+        choco install -y $pkg -version $ver -source https://www.myget.org/F/puppetlabs -debug $opts
+    } catch {
+        echo "Error: $_, trying again."
+        choco install -y $pkg -version $ver -source https://www.myget.org/F/puppetlabs -debug $opts
+    }
+}
+
+if (!(Get-Command choco -ErrorAction SilentlyContinue)) {
+    iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))
+}
+Install-Choco 7zip.commandline 9.20.0.20150210
+Install-Choco cmake 3.0.2.20150210
+Install-Choco git.install 1.9.5.20150210
+if ($arch -eq 64) {
+  Install-Choco ruby 2.1.5.20150210
+  Install-Choco mingw-w64 $mingwVerChoco
+} else {
+  Install-Choco ruby 2.1.5.20150210 @('-x86')
+  Install-Choco mingw-w32 $mingwVerChoco @('-x86')
+}
 $env:PATH = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-$env:PATH += [Environment]::GetFolderPath('ProgramFilesX86') + "\git\cmd"
+if ($arch -eq 32) {
+  $env:PATH = "C:\tools\mingw32\bin;" + $env:PATH
+}
+$env:PATH += [Environment]::GetFolderPath('ProgramFilesX86') + "\Git\cmd"
 echo $env:PATH
 cd $sourceDir
 
 ## Download cfacter and setup build directories
-git clone --recursive https://github.com/puppetlabs/cfacter
-mkdir -Force cfacter\release
-cd cfacter\release
+git clone --recursive $cfacterFork cfacter
+cd cfacter
+git checkout $cfacterRef
+mkdir -Force release
+cd release
 $buildDir=$pwd
 $toolsDir="${sourceDir}\deps"
 mkdir -Force $toolsDir
+cd $toolsDir
 
 if ($buildSource) {
   ## Download, build, and install Boost
-  (New-Object net.webclient).DownloadFile("http://iweb.dl.sourceforge.net/project/boost/boost/$boostVerNum/$boostVer.7z", "$toolsDir\$boostVer.7z")
+  (New-Object net.webclient).DownloadFile("http://downloads.sourceforge.net/boost/$boostVer.7z", "$toolsDir\$boostVer.7z")
   & 7za x "${boostVer}.7z" | FIND /V "ing "
   cd $boostVer
 
@@ -103,7 +144,6 @@ if ($buildSource) {
   cmake $args
   mingw32-make install -j $cores
 } else {
-  cd $toolsDir
   ## Download and unpack Boost from a pre-built package in S3
   (New-Object net.webclient).DownloadFile("https://s3.amazonaws.com/kylo-pl-bucket/${boostPkg}.7z", "$toolsDir\${boostPkg}.7z")
   & 7za x "${boostPkg}.7z" | FIND /V "ing "
@@ -125,3 +165,9 @@ $args = @(
 )
 cmake $args
 mingw32-make -j $cores
+
+## Write out the version that was just built.
+git describe --long | Out-File -FilePath 'bin/VERSION' -Encoding ASCII -Force
+
+## Test the results.
+ctest -V 2>&1 | c++filt
