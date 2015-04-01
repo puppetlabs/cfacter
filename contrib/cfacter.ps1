@@ -10,6 +10,8 @@ param (
 [string] $cfacterFork='git://github.com/puppetlabs/cfacter'
 )
 
+$ErrorActionPreference = 'Stop'
+
 # Ensure TEMP directory is set and exists. Git.install can fail otherwise.
 try {
     if (!(Test-Path $env:TEMP)) { throw }
@@ -95,9 +97,10 @@ echo $env:PATH
 cd $sourceDir
 
 ## Download cfacter and setup build directories
-git clone --recursive $cfacterFork cfacter
+git clone $cfacterFork cfacter
 cd cfacter
 git checkout $cfacterRef
+git submodule update --init --recursive
 mkdir -Force release
 cd release
 $buildDir=$pwd
