@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.12)
 
 set(LIBFACTER_VERSION_MAJOR 0)
 set(LIBFACTER_VERSION_MINOR 4)
-set(LIBFACTER_VERSION_PATCH 0)
+set(LIBFACTER_VERSION_PATCH 1)
 
 # Get the HEAD SHA1
 include(GetGitRevisionDescription)
